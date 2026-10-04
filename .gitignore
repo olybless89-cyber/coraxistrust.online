@@ -42,3 +42,7 @@ historical_context.txt
 .env
 .env.*
 !.env.example
+
+# Generated self-host secrets (selfhost/gen-supabase-keys.py)
+keys.env
+**/keys.env

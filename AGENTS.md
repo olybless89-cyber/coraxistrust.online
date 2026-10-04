@@ -40,3 +40,11 @@
 ## Independence
 - This repo must never point at another deployment's Supabase project, Railway service,
   database, SMTP credentials, or Git remote. Configure fresh credentials via `.env` / Railway.
+
+## Self-hosting
+- The app requires a Supabase-compatible API (auth + PostgREST + storage), not a bare
+  Postgres. Self-hosted Railway deployment: see `selfhost/README.md`.
+- Generate `JWT_SECRET` / `ANON_KEY` / `SERVICE_ROLE_KEY` with
+  `python3 selfhost/gen-supabase-keys.py`; they must be signed with the same secret.
+- `VITE_SUPABASE_URL` is the public gateway (Kong) domain; the anon key goes in
+  `VITE_SUPABASE_ANON_KEY`. Both are build-time inlined by Vite.
