@@ -144,3 +144,47 @@ SMTP_REPLY_TO=support@coraxistrust.online
 - **Image transform**: disabled on the Railway template (needs a shared volume
   Railway does not support). Not used by this app.
 - **Backups**: self-hosting means you own them. Schedule `pg_dump`.
+
+## 10. Deployed instance (coraxistrust.online)
+
+Provisioned with the Railway CLI using the `supabase-self-hosted-full-stack`
+template in its own project (`coraxistrust-supabase`), separate from any source
+infrastructure.
+
+| Piece | Value |
+|---|---|
+| Railway project | `coraxistrust-supabase` (production env) |
+| Gateway (Kong) | `https://kong-production-f62f.up.railway.app` |
+| Web app service | `web` — repo `olybless89-cyber/coraxistrust.online` |
+| Web URL | `https://web-production-e23f.up.railway.app` |
+| Custom domain | `https://coraxistrust.online` (attached to `web`) |
+| Web build vars | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` |
+
+Secrets (`JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`) were generated locally
+with `gen-supabase-keys.py` and set only as Railway service variables — they are
+not in this repository.
+
+### Database
+
+The `supabase/migrations/*.sql` files were applied in order to the stack's
+Postgres (13 tables, RLS enabled, `on_auth_user_created` trigger, and the
+`kyc_documents` storage bucket). The public TCP proxy used for the one-off
+migration run was deleted afterwards, so Postgres is reachable only over
+Railway's private network.
+
+A bootstrap admin is created by `00004_create_admin_user_v2.sql`:
+`admin@coraxistrust.online` with login PIN `1234` (password `cxt_1234`).
+Change the PIN after first sign-in.
+
+### DNS to finish
+
+Attach these records at the `coraxistrust.online` registrar so the custom domain
+verifies and gets a certificate:
+
+```
+CNAME   @                 omyg4tub.up.railway.app
+TXT     _railway-verify   railway-verify=23f58833b42fc5dbab6f002e50ab607de4b4ae0eabc8a1fbc4e9098a580b8795
+```
+
+Until then the app is served from the Railway URL above. Verify with
+`railway domain status coraxistrust.online --service web`.
