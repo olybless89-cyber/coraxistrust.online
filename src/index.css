@@ -1,0 +1,95 @@
+/* stylelint-disable */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+
+    /* Coraxis Trust – Premium Teal & White Institutional Theme */
+    --background: 180 25% 98%;
+    --foreground: 180 45% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 180 45% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 180 45% 10%;
+
+    --primary: 175 78% 27%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 178 28% 94%;
+    --secondary-foreground: 180 45% 10%;
+
+    --muted: 178 28% 94%;
+    --muted-foreground: 178 16% 42%;
+
+    --accent: 175 78% 27%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 178 22% 88%;
+    --input: 178 22% 88%;
+    --ring: 175 78% 27%;
+
+    --chart-1: 175 78% 27%;
+    --chart-2: 175 65% 42%;
+    --chart-3: 197 70% 45%;
+    --chart-4: 43 74% 50%;
+    --chart-5: 27 87% 55%;
+
+    --sidebar-background: 178 45% 8%;
+    --sidebar-foreground: 180 25% 96%;
+    --sidebar-primary: 175 78% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 178 40% 14%;
+    --sidebar-accent-foreground: 180 25% 96%;
+    --sidebar-border: 178 35% 18%;
+    --sidebar-ring: 175 78% 42%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Manrope', 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(172 70% 45%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .glass-card {
+    background: rgba(255,255,255,0.90);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(13,148,136,0.08);
+    box-shadow: 0 2px 24px rgba(13,148,136,0.07);
+  }
+  .teal-glow {
+    box-shadow: 0 0 40px rgba(13,148,136,0.18);
+  }
+  .hero-overlay {
+    background: linear-gradient(90deg, rgba(12,42,38,0.90) 0%, rgba(12,42,38,0.60) 55%, rgba(12,42,38,0.15) 100%);
+  }
+  .section-muted {
+    background: hsl(214 32% 96%);
+  }
+}
