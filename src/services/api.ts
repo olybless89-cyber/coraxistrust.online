@@ -963,27 +963,9 @@ export async function adminCreditAccountBackdated(input: {
   }
 }
 
-export async function adminUpdateAccount(input: {
-  accountId: string;
-  accountNumber?: string;
-  memberSince?: string;
-  ownerPhotoUrl?: string;
-}): Promise<void> {
-  const { error } = await supabase.rpc('admin_update_account', {
-    p_account_id: input.accountId,
-    p_account_number: input.accountNumber ?? null,
-    p_member_since: input.memberSince ?? null,
-    p_owner_photo_url: input.ownerPhotoUrl ?? null,
-  });
-  if (error) {
-    if (error.code === 'PGRST202') throw new Error('Database migration 00014 has not been applied yet.');
-    throw error;
-  }
-}
-
-export async function uploadAvatar(userId: string, file: File): Promise<string> {
+export async function uploadAvatar(folderId: string, file: File): Promise<string> {
   const ext = file.name.split('.').pop() || 'jpg';
-  const path = `${userId}/avatar_${Date.now()}.${ext}`;
+  const path = `${folderId}/avatar_${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from('avatars').upload(path, file, {
     contentType: file.type,
     upsert: true,
