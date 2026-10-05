@@ -89,7 +89,7 @@ Local dev: same two lines in the repo's `.env`.
 
 ## 6. Apply the migrations
 
-Run `supabase/migrations/00001` → `00012` **in order** against the self-hosted
+Run `supabase/migrations/00001` → `00015` **in order** against the self-hosted
 database (Studio's SQL editor, or `psql "$DATABASE_URL" -f ...`). They create the
 enums, tables, RLS policies, the `handle_new_user` trigger on `auth.users`, the
 `kyc_documents` storage bucket, and the `admin_delete_user` RPC. Finish with:

@@ -59,7 +59,7 @@ frontend bundle.
 ## Database
 
 SQL migrations live in [`supabase/migrations`](supabase/migrations). Apply them
-in order (00001 → 00012) in a **new** Supabase project's SQL Editor. See the
+in order (00001 → 00015) in a **new** Supabase project's SQL Editor. See the
 migration headers for details. Key notes:
 
 - `00008` fixes a `profiles` RLS recursion and must be applied before the app
