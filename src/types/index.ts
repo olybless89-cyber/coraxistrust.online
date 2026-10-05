@@ -8,7 +8,7 @@ export interface Option {
 }
 
 export type UserRole = 'user' | 'admin';
-export type AccountType = 'savings' | 'checking' | 'corporate' | 'student' | 'joint' | 'fixed' | 'crypto';
+export type AccountType = 'savings' | 'checking' | 'corporate' | 'student' | 'joint' | 'fixed' | 'crypto' | 'investment' | 'trust';
 export type TransactionType = 'deposit' | 'withdrawal' | 'transfer' | 'interest';
 export type TransactionStatus = 'pending' | 'completed' | 'failed' | 'cancelled';
 export type InvestmentStatus = 'active' | 'completed' | 'cancelled';
@@ -42,6 +42,8 @@ export interface BankAccount {
   balance: number;
   branch: string | null;
   apy: number | null;
+  member_since: string | null;
+  owner_photo_url: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

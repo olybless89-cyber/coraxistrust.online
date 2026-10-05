@@ -8,16 +8,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import type { Profile, BankAccount } from '@/types';
-import { adminCreditAccount, adminCreateUser, adminDeleteUser, adminSetUserPassword, setUserLoginPin, setUserTransfersBlocked, setUserTransferPin } from '@/services/api';
+import { adminCreditAccountBackdated, adminCreateUser, adminDeleteUser, adminSetUserPassword, setUserLoginPin, setUserTransfersBlocked, setUserTransferPin, uploadAvatar } from '@/services/api';
+import { ACCOUNT_TYPES } from '@/config/brand';
 import { useAuth } from '@/contexts/AuthContext';
 
-const ACCOUNT_TYPE_OPTIONS = ['savings', 'checking', 'corporate', 'student', 'joint', 'fixed', 'crypto'];
+const ACCOUNT_TYPE_OPTIONS = [...ACCOUNT_TYPES];
 const CURRENCY_OPTIONS = ['USD', 'GBP', 'EUR', 'CAD', 'AUD', 'NGN', 'ZAR', 'SGD', 'AED', 'CHF', 'JPY'];
 
 const EMPTY_NEW_USER = {
   email: '', first_name: '', last_name: '', username: '', phone: '', country: '',
   login_pin: '', password: '', role: 'user' as 'user' | 'admin',
   account_type: 'savings', currency: 'USD', initial_balance: '',
+  account_number: '', member_since: '', backdate_days: '', transaction_note: '',
 };
 
 interface UserWithAccounts extends Profile {
@@ -51,9 +53,17 @@ export default function AdminUsers() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newUser, setNewUser] = useState({ ...EMPTY_NEW_USER });
   const [creating, setCreating] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>('');
 
   const setNew = (key: keyof typeof EMPTY_NEW_USER, value: string) =>
     setNewUser((u) => ({ ...u, [key]: value }));
+
+  const resetCreateForm = () => {
+    setNewUser({ ...EMPTY_NEW_USER });
+    setPhotoFile(null);
+    setPhotoPreview('');
+  };
 
   const submitCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,8 +73,16 @@ export default function AdminUsers() {
     const opening = newUser.account_type !== 'none';
     const initialBalance = newUser.initial_balance ? parseFloat(newUser.initial_balance) : 0;
     if (initialBalance < 0) { toast.error('Opening balance cannot be negative'); return; }
+    const backdateDays = newUser.backdate_days ? parseInt(newUser.backdate_days, 10) : 0;
+    if (Number.isNaN(backdateDays) || backdateDays < 0) { toast.error('Backdate must be a whole number of days'); return; }
     setCreating(true);
     try {
+      // Upload the owner photo first so the URL can be stored with the account.
+      let ownerPhotoUrl: string | undefined;
+      if (photoFile) {
+        const tempId = crypto.randomUUID();
+        ownerPhotoUrl = await uploadAvatar(tempId, photoFile);
+      }
       await adminCreateUser({
         email: newUser.email.trim(),
         firstName: newUser.first_name || undefined,
@@ -78,10 +96,15 @@ export default function AdminUsers() {
         accountType: opening ? newUser.account_type : undefined,
         currency: newUser.currency,
         initialBalance,
+        accountNumber: newUser.account_number || undefined,
+        memberSince: newUser.member_since || undefined,
+        ownerPhotoUrl,
+        backdateDays,
+        transactionNote: newUser.transaction_note || undefined,
       });
       toast.success(`User ${newUser.email} created`);
       setCreateOpen(false);
-      setNewUser({ ...EMPTY_NEW_USER });
+      resetCreateForm();
       await loadUsers();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to create user');
@@ -183,11 +206,12 @@ export default function AdminUsers() {
   const [creditAccountId, setCreditAccountId] = useState('');
   const [creditAmount, setCreditAmount] = useState('');
   const [creditNote, setCreditNote] = useState('');
+  const [creditBackdate, setCreditBackdate] = useState('');
   const [creditLoading, setCreditLoading] = useState(false);
 
   const openCredit = async (u: UserWithAccounts) => {
     setCreditUser(u);
-    setCreditAmount(''); setCreditNote('');
+    setCreditAmount(''); setCreditNote(''); setCreditBackdate('');
     const { data: accs } = await supabase.from('bank_accounts').select('*').eq('user_id', u.id).order('created_at', { ascending: true });
     setCreditAccounts(accs || []);
     setCreditAccountId(accs && accs[0] ? accs[0].id : '');
@@ -198,9 +222,16 @@ export default function AdminUsers() {
     if (!creditAccountId) { toast.error('User has no account to credit'); return; }
     const amt = parseFloat(creditAmount);
     if (!amt || amt <= 0) { toast.error('Enter a valid amount'); return; }
+    const backdateDays = creditBackdate ? parseInt(creditBackdate, 10) : 0;
+    if (Number.isNaN(backdateDays) || backdateDays < 0) { toast.error('Backdate must be a whole number of days'); return; }
     setCreditLoading(true);
     try {
-      await adminCreditAccount({ accountId: creditAccountId, amount: amt, description: creditNote || 'Admin Credit' });
+      await adminCreditAccountBackdated({
+        accountId: creditAccountId,
+        amount: amt,
+        description: creditNote || 'Admin Credit',
+        backdateDays,
+      });
       toast.success(`$${amt.toFixed(2)} credited successfully`);
       setCreditUser(null);
       await loadUsers();
@@ -293,7 +324,7 @@ export default function AdminUsers() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search by name, username, email…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-muted border-border" />
           </div>
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0" onClick={() => setCreateOpen(true)}>
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0" onClick={() => { resetCreateForm(); setCreateOpen(true); }}>
             <UserPlus className="w-4 h-4 mr-2" />Create User
           </Button>
         </div>
@@ -466,6 +497,11 @@ export default function AdminUsers() {
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Note (Optional)</label>
               <Input placeholder="e.g. Welcome bonus, Manual deposit" value={creditNote} onChange={(e) => setCreditNote(e.target.value)} className="bg-white border-border h-12" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Backdate (days, Optional)</label>
+              <Input type="number" min="0" step="1" placeholder="0 — post dated today" value={creditBackdate} onChange={(e) => setCreditBackdate(e.target.value)} className="bg-white border-border h-12" />
+              <p className="text-xs text-muted-foreground mt-1">Dating the credit in the past only changes the transaction date; the balance updates immediately.</p>
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setCreditUser(null)} className="border border-border">Cancel</Button>
@@ -657,6 +693,47 @@ export default function AdminUsers() {
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">Opening balance</label>
                   <Input type="number" min="0" step="0.01" value={newUser.initial_balance} onChange={(e) => setNew('initial_balance', e.target.value)} placeholder="0.00" disabled={newUser.account_type === 'none'} className="bg-white border-border h-10" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Account number</label>
+                  <Input value={newUser.account_number} onChange={(e) => setNew('account_number', e.target.value)} placeholder="auto (CXT…)" disabled={newUser.account_type === 'none'} className="bg-white border-border h-10 font-mono" />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Member since</label>
+                  <Input type="date" value={newUser.member_since} onChange={(e) => setNew('member_since', e.target.value)} disabled={newUser.account_type === 'none'} className="bg-white border-border h-10" />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Backdate (days)</label>
+                  <Input type="number" min="0" step="1" value={newUser.backdate_days} onChange={(e) => setNew('backdate_days', e.target.value)} placeholder="0" disabled={newUser.account_type === 'none'} className="bg-white border-border h-10" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Opening note</label>
+                  <Input value={newUser.transaction_note} onChange={(e) => setNew('transaction_note', e.target.value)} placeholder="Opening deposit" disabled={newUser.account_type === 'none'} className="bg-white border-border h-10" />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Owner photo (optional)</label>
+                  <div className="flex items-center gap-3">
+                    {photoPreview && (
+                      <img src={photoPreview} alt="Owner preview" className="w-10 h-10 rounded-full object-cover border border-border" />
+                    )}
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      disabled={newUser.account_type === 'none'}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] || null;
+                        setPhotoFile(f);
+                        setPhotoPreview(f ? URL.createObjectURL(f) : '');
+                      }}
+                      className="bg-white border-border h-10 file:mr-2 file:rounded file:border-0 file:bg-secondary file:px-2 file:py-1 file:text-xs"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

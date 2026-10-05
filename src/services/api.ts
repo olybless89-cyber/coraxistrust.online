@@ -293,46 +293,6 @@ export async function withdrawFunds(payload: {
 
 // ─── Admin: credit a user account (add balance) ──────────────────────────────
 
-export async function adminCreditAccount(payload: {
-  accountId: string;
-  amount: number;
-  description?: string;
-}) {
-  const { accountId, amount, description } = payload;
-  if (amount <= 0) throw new Error('Amount must be greater than zero');
-
-  const { data: account, error: accErr } = await supabase
-    .from('bank_accounts')
-    .select('balance, currency, user_id')
-    .eq('id', accountId)
-    .maybeSingle();
-  if (accErr || !account) throw new Error('Account not found');
-
-  const { error: balErr } = await supabase
-    .from('bank_accounts')
-    .update({ balance: account.balance + amount })
-    .eq('id', accountId);
-  if (balErr) throw balErr;
-
-  const { error: txErr } = await supabase.from('transactions').insert({
-    account_id: accountId,
-    type: 'deposit',
-    status: 'completed',
-    amount,
-    currency: account.currency,
-    description: description || 'Admin Credit',
-  });
-  if (txErr) throw txErr;
-
-  notify(account.user_id, {
-    title: 'Account credited',
-    body: `${account.currency} ${amount.toFixed(2)} was credited to your account by the bank${description ? ` (${description})` : ''}. New balance: ${account.currency} ${(account.balance + amount).toFixed(2)}.`,
-    type: 'transaction',
-  });
-
-  return { success: true };
-}
-
 // ─── Investments ─────────────────────────────────────────────────────────────
 
 export async function getUserInvestments(userId: string): Promise<Investment[]> {
@@ -937,6 +897,11 @@ export interface AdminCreateUserInput {
   accountType?: string;
   currency?: string;
   initialBalance?: number;
+  accountNumber?: string;
+  memberSince?: string;
+  ownerPhotoUrl?: string;
+  backdateDays?: number;
+  transactionNote?: string;
 }
 
 export async function adminCreateUser(input: AdminCreateUserInput): Promise<string> {
@@ -953,12 +918,79 @@ export async function adminCreateUser(input: AdminCreateUserInput): Promise<stri
     p_account_type: input.accountType ?? null,
     p_currency: input.currency ?? 'USD',
     p_initial_balance: input.initialBalance ?? 0,
+    p_account_number: input.accountNumber ?? null,
+    p_member_since: input.memberSince ?? null,
+    p_owner_photo_url: input.ownerPhotoUrl ?? null,
+    p_backdate_days: input.backdateDays ?? 0,
+    p_transaction_note: input.transactionNote ?? null,
   });
   if (error) {
-    if (error.code === 'PGRST202') throw new Error('Database migration 00013 has not been applied yet.');
+    if (error.code === 'PGRST202') throw new Error('Database migration 00014 has not been applied yet.');
     throw error;
   }
   return data as string;
+}
+
+export async function adminCreditAccountBackdated(input: {
+  accountId: string;
+  amount: number;
+  description?: string;
+  backdateDays?: number;
+}): Promise<void> {
+  const { data: account } = await supabase
+    .from('bank_accounts')
+    .select('currency, balance, user_id')
+    .eq('id', input.accountId)
+    .maybeSingle();
+
+  const { error } = await supabase.rpc('admin_credit_account', {
+    p_account_id: input.accountId,
+    p_amount: input.amount,
+    p_description: input.description ?? null,
+    p_backdate_days: input.backdateDays ?? 0,
+  });
+  if (error) {
+    if (error.code === 'PGRST202') throw new Error('Database migration 00014 has not been applied yet.');
+    throw error;
+  }
+
+  if (account) {
+    notify(account.user_id, {
+      title: 'Account credited',
+      body: `${account.currency} ${input.amount.toFixed(2)} was credited to your account by the bank${input.description ? ` (${input.description})` : ''}. New balance: ${account.currency} ${(account.balance + input.amount).toFixed(2)}.`,
+      type: 'transaction',
+    });
+  }
+}
+
+export async function adminUpdateAccount(input: {
+  accountId: string;
+  accountNumber?: string;
+  memberSince?: string;
+  ownerPhotoUrl?: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc('admin_update_account', {
+    p_account_id: input.accountId,
+    p_account_number: input.accountNumber ?? null,
+    p_member_since: input.memberSince ?? null,
+    p_owner_photo_url: input.ownerPhotoUrl ?? null,
+  });
+  if (error) {
+    if (error.code === 'PGRST202') throw new Error('Database migration 00014 has not been applied yet.');
+    throw error;
+  }
+}
+
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = `${userId}/avatar_${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('avatars').upload(path, file, {
+    contentType: file.type,
+    upsert: true,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+  return data.publicUrl;
 }
 
 export async function adminSetUserPassword(

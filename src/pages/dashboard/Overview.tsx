@@ -81,19 +81,33 @@ export default function DashboardPage() {
       ) : (
         <div className="rounded-2xl bg-gradient-to-br from-[#0d9488] to-[#0c2a26] p-8 text-white teal-glow">
           <div className="flex items-start justify-between mb-6">
-            <div>
-              <div className="text-white/60 text-sm mb-1">Total Available Balance</div>
-              <div className="flex items-center gap-3">
-                <span className="text-4xl font-extrabold">
-                  {balanceVisible ? `$${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '••••••••'}
-                </span>
-                <button onClick={() => setBalanceVisible(!balanceVisible)} className="text-white/60 hover:text-white transition-colors">
-                  {balanceVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-              {primaryAccount?.apy && primaryAccount.apy > 0 && (
-                <div className="text-white/60 text-xs mt-1">+{primaryAccount.apy}% APY growth this month</div>
+            <div className="flex items-start gap-4">
+              {primaryAccount?.owner_photo_url && (
+                <img
+                  src={primaryAccount.owner_photo_url}
+                  alt="Account owner"
+                  className="w-14 h-14 rounded-full object-cover border-2 border-white/30"
+                />
               )}
+              <div>
+                <div className="text-white/60 text-sm mb-1">Total Available Balance</div>
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl font-extrabold">
+                    {balanceVisible ? `$${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '••••••••'}
+                  </span>
+                  <button onClick={() => setBalanceVisible(!balanceVisible)} className="text-white/60 hover:text-white transition-colors">
+                    {balanceVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {primaryAccount?.apy && primaryAccount.apy > 0 && (
+                  <div className="text-white/60 text-xs mt-1">+{primaryAccount.apy}% APY growth this month</div>
+                )}
+                {primaryAccount?.member_since && (
+                  <div className="text-white/60 text-xs mt-1">
+                    Member since {new Date(primaryAccount.member_since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="text-right">
               <div className="text-white/60 text-xs mb-1">Account Number</div>
