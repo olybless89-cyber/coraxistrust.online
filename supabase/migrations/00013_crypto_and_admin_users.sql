@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS public.crypto_assets (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+DROP TRIGGER IF EXISTS crypto_assets_updated_at ON public.crypto_assets;
 CREATE TRIGGER crypto_assets_updated_at BEFORE UPDATE ON public.crypto_assets
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
@@ -103,7 +104,7 @@ CREATE OR REPLACE FUNCTION public.admin_create_user(
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = public, auth, extensions
 AS $$
 DECLARE
   new_id uuid := gen_random_uuid();
@@ -201,7 +202,7 @@ CREATE OR REPLACE FUNCTION public.admin_set_user_password(
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = public, auth, extensions
 AS $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin') THEN
