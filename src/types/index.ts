@@ -8,7 +8,7 @@ export interface Option {
 }
 
 export type UserRole = 'user' | 'admin';
-export type AccountType = 'savings' | 'checking' | 'corporate' | 'student' | 'joint' | 'fixed';
+export type AccountType = 'savings' | 'checking' | 'corporate' | 'student' | 'joint' | 'fixed' | 'crypto';
 export type TransactionType = 'deposit' | 'withdrawal' | 'transfer' | 'interest';
 export type TransactionStatus = 'pending' | 'completed' | 'failed' | 'cancelled';
 export type InvestmentStatus = 'active' | 'completed' | 'cancelled';
@@ -121,6 +121,38 @@ export interface MailMessage {
   body: string;
   is_read: boolean;
   created_at: string;
+}
+
+export interface CryptoAsset {
+  id: string;
+  symbol: string;
+  name: string;
+  price_usd: number;
+  change_24h: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CryptoHolding {
+  id: string;
+  user_id: string;
+  account_id: string;
+  symbol: string;
+  quantity: number;
+  price_usd: number;
+  value_usd: number;
+  side: 'buy' | 'sell';
+  created_at: string;
+}
+
+export interface CryptoPosition {
+  symbol: string;
+  name: string;
+  quantity: number;
+  price_usd: number;
+  value_usd: number;
+  change_24h: number;
 }
 
 export type TransferMethod = 'internal' | 'ach' | 'wire' | 'international';

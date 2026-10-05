@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ArrowLeftRight, History, User,
   Building2, LogOut, Menu, Settings, TrendingUp, Shield,
-  Wallet, CreditCard, Mail,
+  Wallet, CreditCard, Mail, Bitcoin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -19,6 +19,7 @@ const navItems = [
   { label: 'Debit Card', href: '/dashboard/debit-card', icon: CreditCard },
   { label: 'Transactions', href: '/dashboard/transactions', icon: History },
   { label: 'Investments', href: '/dashboard/investments', icon: TrendingUp },
+  { label: 'Crypto', href: '/dashboard/crypto', icon: Bitcoin },
   { label: 'Messages', href: '/dashboard/messages', icon: Mail },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];

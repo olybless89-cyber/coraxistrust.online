@@ -34,6 +34,7 @@ import TransferPage from '@/pages/dashboard/Transfer';
 import MoneyPage from '@/pages/dashboard/Money';
 import DebitCardPage from '@/pages/dashboard/DebitCard';
 import InvestmentsPage from '@/pages/dashboard/Investments';
+import CryptoPage from '@/pages/dashboard/Crypto';
 import ProfilePage from '@/pages/dashboard/Profile';
 import MessagesPage from '@/pages/dashboard/Messages';
 
@@ -84,6 +85,7 @@ const App: React.FC = () => {
               <Route path="money" element={<MoneyPage />} />
               <Route path="debit-card" element={<DebitCardPage />} />
               <Route path="investments" element={<InvestmentsPage />} />
+              <Route path="crypto" element={<CryptoPage />} />
               <Route path="messages" element={<MessagesPage />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>

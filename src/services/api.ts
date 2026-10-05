@@ -1,5 +1,5 @@
 import { supabase } from '@/db/supabase';
-import type { BankAccount, Transaction, Investment, Profile, CardRequest, AppNotification, MailMessage, TransferDetails } from '@/types';
+import type { BankAccount, Transaction, Investment, Profile, CardRequest, AppNotification, MailMessage, TransferDetails, CryptoAsset, CryptoHolding, CryptoPosition } from '@/types';
 
 // Tables/columns from migration 00006 may not exist in the live DB yet.
 // Missing-schema errors must degrade gracefully instead of breaking the app.
@@ -710,4 +710,274 @@ export async function getProfilesByIds(ids: string[]): Promise<Profile[]> {
   const { data, error } = await supabase.from('profiles').select('*').in('id', ids);
   if (error) return [];
   return Array.isArray(data) ? data : [];
+}
+
+// ─── Crypto ─────────────────────────────────────────────────────────────────
+
+export async function getCryptoAssets(): Promise<CryptoAsset[]> {
+  const { data, error } = await supabase
+    .from('crypto_assets')
+    .select('*')
+    .eq('is_active', true)
+    .order('symbol', { ascending: true });
+  if (error) return [];
+  return Array.isArray(data) ? data : [];
+}
+
+// A user's crypto wallet. Created lazily so an existing user does not need to
+// re-register to start trading.
+export async function getOrCreateCryptoWallet(userId: string): Promise<BankAccount | null> {
+  const existing = await supabase
+    .from('bank_accounts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('account_type', 'crypto')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (existing.data) return existing.data;
+  if (existing.error && !isMissingSchemaError(existing.error)) throw existing.error;
+
+  const { data, error } = await supabase
+    .from('bank_accounts')
+    .insert({ user_id: userId, account_type: 'crypto', currency: 'USD', balance: 0, apy: 0 })
+    .select('*')
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function getCryptoHoldings(userId: string): Promise<CryptoHolding[]> {
+  const { data, error } = await supabase
+    .from('crypto_holdings')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return Array.isArray(data) ? data : [];
+}
+
+// Net position per symbol, valued at the latest known price.
+export async function getCryptoPositions(userId: string): Promise<CryptoPosition[]> {
+  const [holdings, assets] = await Promise.all([getCryptoHoldings(userId), getCryptoAssets()]);
+  const priceBySymbol = new Map(assets.map((a) => [a.symbol, a]));
+  const nameBySymbol = new Map(assets.map((a) => [a.symbol, a.name]));
+
+  const positions = new Map<string, CryptoPosition>();
+  for (const h of holdings) {
+    const signed = h.side === 'buy' ? h.quantity : -h.quantity;
+    const asset = priceBySymbol.get(h.symbol);
+    const price = asset?.price_usd ?? h.price_usd;
+    const current = positions.get(h.symbol) ?? {
+      symbol: h.symbol,
+      name: nameBySymbol.get(h.symbol) ?? h.symbol,
+      quantity: 0,
+      price_usd: price,
+      value_usd: 0,
+      change_24h: asset?.change_24h ?? 0,
+    };
+    current.quantity += signed;
+    current.price_usd = price;
+    current.value_usd = current.quantity * price;
+    positions.set(h.symbol, current);
+  }
+
+  return [...positions.values()]
+    .filter((p) => Math.abs(p.quantity) > 1e-8)
+    .sort((a, b) => b.value_usd - a.value_usd);
+}
+
+export async function buyCrypto(payload: {
+  userId: string;
+  accountId: string;
+  symbol: string;
+  amountUsd: number;
+}): Promise<CryptoHolding> {
+  const { userId, accountId, symbol, amountUsd } = payload;
+  if (!(amountUsd > 0)) throw new Error('Enter an amount greater than zero');
+
+  const { data: asset, error: assetErr } = await supabase
+    .from('crypto_assets')
+    .select('*')
+    .eq('symbol', symbol)
+    .maybeSingle();
+  if (assetErr) throw assetErr;
+  if (!asset) throw new Error('Unknown asset');
+
+  const { data: account, error: accErr } = await supabase
+    .from('bank_accounts')
+    .select('balance, currency')
+    .eq('id', accountId)
+    .maybeSingle();
+  if (accErr || !account) throw new Error('Wallet not found');
+  if (account.balance < amountUsd) throw new Error('Insufficient wallet balance');
+
+  const quantity = amountUsd / asset.price_usd;
+
+  const { error: balErr } = await supabase
+    .from('bank_accounts')
+    .update({ balance: account.balance - amountUsd })
+    .eq('id', accountId);
+  if (balErr) throw balErr;
+
+  const { data: holding, error: holdErr } = await supabase
+    .from('crypto_holdings')
+    .insert({
+      user_id: userId,
+      account_id: accountId,
+      symbol,
+      quantity,
+      price_usd: asset.price_usd,
+      value_usd: amountUsd,
+      side: 'buy',
+    })
+    .select('*')
+    .maybeSingle();
+  if (holdErr) throw holdErr;
+
+  await supabase.from('transactions').insert({
+    account_id: accountId,
+    type: 'withdrawal',
+    status: 'completed',
+    amount: amountUsd,
+    currency: account.currency,
+    description: `Bought ${quantity.toFixed(6)} ${symbol} @ $${asset.price_usd.toLocaleString('en-US')}`,
+  });
+
+  notify(userId, {
+    title: 'Crypto purchase complete',
+    body: `You bought ${quantity.toFixed(6)} ${symbol} for $${amountUsd.toFixed(2)}.`,
+    type: 'transaction',
+  });
+
+  return holding as CryptoHolding;
+}
+
+export async function sellCrypto(payload: {
+  userId: string;
+  accountId: string;
+  symbol: string;
+  quantity: number;
+}): Promise<CryptoHolding> {
+  const { userId, accountId, symbol, quantity } = payload;
+  if (!(quantity > 0)) throw new Error('Enter a quantity greater than zero');
+
+  const { data: asset, error: assetErr } = await supabase
+    .from('crypto_assets')
+    .select('*')
+    .eq('symbol', symbol)
+    .maybeSingle();
+  if (assetErr) throw assetErr;
+  if (!asset) throw new Error('Unknown asset');
+
+  const positions = await getCryptoPositions(userId);
+  const position = positions.find((p) => p.symbol === symbol);
+  if (!position || position.quantity < quantity) throw new Error('Insufficient holdings');
+
+  const proceeds = quantity * asset.price_usd;
+
+  const { data: account, error: accErr } = await supabase
+    .from('bank_accounts')
+    .select('balance, currency')
+    .eq('id', accountId)
+    .maybeSingle();
+  if (accErr || !account) throw new Error('Wallet not found');
+
+  const { error: balErr } = await supabase
+    .from('bank_accounts')
+    .update({ balance: account.balance + proceeds })
+    .eq('id', accountId);
+  if (balErr) throw balErr;
+
+  const { data: holding, error: holdErr } = await supabase
+    .from('crypto_holdings')
+    .insert({
+      user_id: userId,
+      account_id: accountId,
+      symbol,
+      quantity,
+      price_usd: asset.price_usd,
+      value_usd: proceeds,
+      side: 'sell',
+    })
+    .select('*')
+    .maybeSingle();
+  if (holdErr) throw holdErr;
+
+  await supabase.from('transactions').insert({
+    account_id: accountId,
+    type: 'deposit',
+    status: 'completed',
+    amount: proceeds,
+    currency: account.currency,
+    description: `Sold ${quantity.toFixed(6)} ${symbol} @ $${asset.price_usd.toLocaleString('en-US')}`,
+  });
+
+  notify(userId, {
+    title: 'Crypto sale complete',
+    body: `You sold ${quantity.toFixed(6)} ${symbol} for $${proceeds.toFixed(2)}.`,
+    type: 'transaction',
+  });
+
+  return holding as CryptoHolding;
+}
+
+// ─── Admin: user provisioning ───────────────────────────────────────────────
+
+export interface AdminCreateUserInput {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  phone?: string;
+  country?: string;
+  password?: string;
+  loginPin?: string;
+  role?: 'user' | 'admin';
+  accountType?: string;
+  currency?: string;
+  initialBalance?: number;
+}
+
+export async function adminCreateUser(input: AdminCreateUserInput): Promise<string> {
+  const { data, error } = await supabase.rpc('admin_create_user', {
+    p_email: input.email,
+    p_first_name: input.firstName ?? null,
+    p_last_name: input.lastName ?? null,
+    p_username: input.username ?? null,
+    p_phone: input.phone ?? null,
+    p_country: input.country ?? null,
+    p_password: input.password ?? null,
+    p_login_pin: input.loginPin ?? null,
+    p_role: input.role ?? 'user',
+    p_account_type: input.accountType ?? null,
+    p_currency: input.currency ?? 'USD',
+    p_initial_balance: input.initialBalance ?? 0,
+  });
+  if (error) {
+    if (error.code === 'PGRST202') throw new Error('Database migration 00013 has not been applied yet.');
+    throw error;
+  }
+  return data as string;
+}
+
+export async function adminSetUserPassword(
+  userId: string,
+  newPassword: string,
+  loginPin?: string
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_set_user_password', {
+    target_user_id: userId,
+    new_password: newPassword,
+    p_login_pin: loginPin ?? null,
+  });
+  if (error) {
+    if (error.code === 'PGRST202') throw new Error('Database migration 00013 has not been applied yet.');
+    throw error;
+  }
+  notify(userId, {
+    title: 'Password changed',
+    body: 'Your sign-in password was changed by the bank. If this was not you, contact support immediately.',
+    type: 'security',
+  });
 }

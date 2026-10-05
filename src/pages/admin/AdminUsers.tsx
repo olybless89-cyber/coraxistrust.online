@@ -1,15 +1,24 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/db/supabase';
-import { Search, UserCog, Ban, CheckCircle, Mail, ChevronDown, ChevronUp, PlusCircle, ArrowLeftRight, KeyRound, Trash2 } from 'lucide-react';
+import { Search, UserCog, Ban, CheckCircle, Mail, ChevronDown, ChevronUp, PlusCircle, ArrowLeftRight, KeyRound, Trash2, UserPlus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import type { Profile, BankAccount } from '@/types';
-import { adminCreditAccount, adminDeleteUser, setUserLoginPin, setUserTransfersBlocked, setUserTransferPin } from '@/services/api';
+import { adminCreditAccount, adminCreateUser, adminDeleteUser, adminSetUserPassword, setUserLoginPin, setUserTransfersBlocked, setUserTransferPin } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
+
+const ACCOUNT_TYPE_OPTIONS = ['savings', 'checking', 'corporate', 'student', 'joint', 'fixed', 'crypto'];
+const CURRENCY_OPTIONS = ['USD', 'GBP', 'EUR', 'CAD', 'AUD', 'NGN', 'ZAR', 'SGD', 'AED', 'CHF', 'JPY'];
+
+const EMPTY_NEW_USER = {
+  email: '', first_name: '', last_name: '', username: '', phone: '', country: '',
+  login_pin: '', password: '', role: 'user' as 'user' | 'admin',
+  account_type: 'savings', currency: 'USD', initial_balance: '',
+};
 
 interface UserWithAccounts extends Profile {
   account_count: number;
@@ -36,6 +45,80 @@ export default function AdminUsers() {
     setCodesUser(u);
     setTpinInput('');
     setLpinInput('');
+  };
+
+  // Create-user dialog state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newUser, setNewUser] = useState({ ...EMPTY_NEW_USER });
+  const [creating, setCreating] = useState(false);
+
+  const setNew = (key: keyof typeof EMPTY_NEW_USER, value: string) =>
+    setNewUser((u) => ({ ...u, [key]: value }));
+
+  const submitCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUser.email.trim()) { toast.error('Email is required'); return; }
+    if (newUser.login_pin && !/^\d{4}$/.test(newUser.login_pin)) { toast.error('Login PIN must be exactly 4 digits'); return; }
+    if (newUser.password && newUser.password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+    const opening = newUser.account_type !== 'none';
+    const initialBalance = newUser.initial_balance ? parseFloat(newUser.initial_balance) : 0;
+    if (initialBalance < 0) { toast.error('Opening balance cannot be negative'); return; }
+    setCreating(true);
+    try {
+      await adminCreateUser({
+        email: newUser.email.trim(),
+        firstName: newUser.first_name || undefined,
+        lastName: newUser.last_name || undefined,
+        username: newUser.username || undefined,
+        phone: newUser.phone || undefined,
+        country: newUser.country || undefined,
+        password: newUser.password || undefined,
+        loginPin: newUser.login_pin || undefined,
+        role: newUser.role,
+        accountType: opening ? newUser.account_type : undefined,
+        currency: newUser.currency,
+        initialBalance,
+      });
+      toast.success(`User ${newUser.email} created`);
+      setCreateOpen(false);
+      setNewUser({ ...EMPTY_NEW_USER });
+      await loadUsers();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create user');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // Set-password dialog state
+  const [pwUser, setPwUser] = useState<UserWithAccounts | null>(null);
+  const [pwInput, setPwInput] = useState('');
+  const [pwPinInput, setPwPinInput] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+
+  const openPassword = (u: UserWithAccounts) => {
+    setPwUser(u);
+    setPwInput('');
+    setPwPinInput('');
+  };
+
+  const submitPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pwUser) return;
+    if (pwInput.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+    if (pwPinInput && !/^\d{4}$/.test(pwPinInput)) { toast.error('Login PIN must be exactly 4 digits'); return; }
+    setPwSaving(true);
+    try {
+      await adminSetUserPassword(pwUser.id, pwInput, pwPinInput || undefined);
+      if (pwPinInput) setPwUser({ ...pwUser, login_pin: pwPinInput });
+      setPwInput('');
+      setPwPinInput('');
+      toast.success('Password updated');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update password');
+    } finally {
+      setPwSaving(false);
+    }
   };
 
   // Delete user state
@@ -205,9 +288,14 @@ export default function AdminUsers() {
           <h1 className="text-2xl font-extrabold text-foreground">Users</h1>
           <p className="text-muted-foreground text-sm mt-1">{users.length} total registered users</p>
         </div>
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search by name, username, email…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-muted border-border" />
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Search by name, username, email…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-muted border-border" />
+          </div>
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0" onClick={() => setCreateOpen(true)}>
+            <UserPlus className="w-4 h-4 mr-2" />Create User
+          </Button>
         </div>
       </div>
 
@@ -313,6 +401,14 @@ export default function AdminUsers() {
                             onClick={() => openCodes(u)}
                           >
                             <KeyRound className="w-3 h-3 mr-1" />PINs
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="border border-border text-xs h-8 px-2"
+                            onClick={() => openPassword(u)}
+                          >
+                            <KeyRound className="w-3 h-3 mr-1" />Set Password
                           </Button>
                           <Button
                             size="sm"
@@ -483,6 +579,121 @@ export default function AdminUsers() {
               <Trash2 className="w-4 h-4 mr-1.5" />{deleting ? 'Deleting...' : 'Delete User'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User dialog */}
+      <Dialog open={createOpen} onOpenChange={(open) => { if (!open) setCreateOpen(false); }}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create User</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitCreateUser} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Email *</label>
+              <Input type="email" required value={newUser.email} onChange={(e) => setNew('email', e.target.value)} placeholder="user@example.com" className="bg-white border-border h-11" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">First name</label>
+                <Input value={newUser.first_name} onChange={(e) => setNew('first_name', e.target.value)} className="bg-white border-border h-11" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Last name</label>
+                <Input value={newUser.last_name} onChange={(e) => setNew('last_name', e.target.value)} className="bg-white border-border h-11" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Username</label>
+                <Input value={newUser.username} onChange={(e) => setNew('username', e.target.value)} placeholder="auto from email" className="bg-white border-border h-11" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Phone</label>
+                <Input value={newUser.phone} onChange={(e) => setNew('phone', e.target.value)} className="bg-white border-border h-11" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Country</label>
+                <Input value={newUser.country} onChange={(e) => setNew('country', e.target.value)} className="bg-white border-border h-11" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Role</label>
+                <select value={newUser.role} onChange={(e) => setNew('role', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-white border border-border text-foreground text-sm">
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Login PIN</label>
+                <Input inputMode="numeric" maxLength={4} value={newUser.login_pin} onChange={(e) => setNew('login_pin', e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="4 digits (auto if blank)" className="bg-white border-border h-11 tracking-[0.2em]" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Password</label>
+                <Input type="text" value={newUser.password} onChange={(e) => setNew('password', e.target.value)} placeholder="optional (cxt_PIN if blank)" className="bg-white border-border h-11" />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border p-4 space-y-3">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Opening account</div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Type</label>
+                  <select value={newUser.account_type} onChange={(e) => setNew('account_type', e.target.value)} className="w-full h-10 px-2 rounded-lg bg-white border border-border text-foreground text-sm capitalize">
+                    <option value="none">None</option>
+                    {ACCOUNT_TYPE_OPTIONS.map((t) => <option key={t} value={t} className="capitalize">{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Currency</label>
+                  <select value={newUser.currency} onChange={(e) => setNew('currency', e.target.value)} className="w-full h-10 px-2 rounded-lg bg-white border border-border text-foreground text-sm">
+                    {CURRENCY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Opening balance</label>
+                  <Input type="number" min="0" step="0.01" value={newUser.initial_balance} onChange={(e) => setNew('initial_balance', e.target.value)} placeholder="0.00" disabled={newUser.account_type === 'none'} className="bg-white border-border h-10" />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button type="button" variant="ghost" onClick={() => setCreateOpen(false)} className="border border-border">Cancel</Button>
+              <Button type="submit" disabled={creating} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                {creating ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Creating...</> : <><UserPlus className="w-4 h-4 mr-1.5" />Create User</>}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Set Password dialog */}
+      <Dialog open={!!pwUser} onOpenChange={(open) => !open && setPwUser(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Password — {pwUser?.first_name || pwUser?.username || 'User'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitPassword} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">New password</label>
+              <Input type="text" value={pwInput} onChange={(e) => setPwInput(e.target.value)} placeholder="At least 6 characters" className="bg-white border-border h-11" />
+              <p className="text-xs text-muted-foreground mt-2">This replaces the user's sign-in password directly.</p>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Login PIN (optional)</label>
+              <Input inputMode="numeric" maxLength={4} value={pwPinInput} onChange={(e) => setPwPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Also set 4-digit PIN" className="bg-white border-border h-11 tracking-[0.3em]" />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setPwUser(null)} className="border border-border">Cancel</Button>
+              <Button type="submit" disabled={pwSaving || pwInput.length < 6} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                {pwSaving ? 'Saving...' : 'Update Password'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

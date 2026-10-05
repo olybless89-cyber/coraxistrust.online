@@ -10,7 +10,7 @@ import { BRAND } from '@/config/brand';
 
 const COUNTRIES = ['United States','United Kingdom','Canada','Australia','Germany','France','India','Nigeria','South Africa','Singapore','UAE','Netherlands','Switzerland','Japan','Brazil','Mexico','Kenya','Ghana'];
 const CURRENCIES = ['USD','GBP','EUR','CAD','AUD','NGN','ZAR','SGD','AED','CHF','JPY'];
-const ACCOUNT_TYPES = ['savings','checking','corporate','student','joint','fixed'];
+const ACCOUNT_TYPES = ['savings','checking','corporate','student','joint','fixed','crypto'];
 const BRANCHES = ['London City Branch','New York Main Branch','Tokyo Fintech Hub','Zurich Private Wealth Center','Coraxis HQ'];
 const ID_TYPES = ['National ID','International Passport','Driver\'s License','Voter\'s Card'];
 
