@@ -77,6 +77,10 @@ export default function AdminUsers() {
     if (Number.isNaN(backdateDays) || backdateDays < 0) { toast.error('Backdate must be a whole number of days'); return; }
     setCreating(true);
     try {
+      // The login page authenticates with the PIN, so never leave it unknown:
+      // if the admin did not type one, generate it and show it back to them.
+      const loginPin = newUser.login_pin || String(Math.floor(1000 + Math.random() * 9000));
+
       // Upload the owner photo first so the URL can be stored with the account.
       let ownerPhotoUrl: string | undefined;
       if (photoFile) {
@@ -91,7 +95,7 @@ export default function AdminUsers() {
         phone: newUser.phone || undefined,
         country: newUser.country || undefined,
         password: newUser.password || undefined,
-        loginPin: newUser.login_pin || undefined,
+        loginPin,
         role: newUser.role,
         accountType: opening ? newUser.account_type : undefined,
         currency: newUser.currency,
@@ -102,7 +106,7 @@ export default function AdminUsers() {
         backdateDays,
         transactionNote: newUser.transaction_note || undefined,
       });
-      toast.success(`User ${newUser.email} created`);
+      toast.success(`User ${newUser.email} created — login PIN ${loginPin}`, { duration: 15000 });
       setCreateOpen(false);
       resetCreateForm();
       await loadUsers();
@@ -667,7 +671,7 @@ export default function AdminUsers() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Login PIN</label>
-                <Input inputMode="numeric" maxLength={4} value={newUser.login_pin} onChange={(e) => setNew('login_pin', e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="4 digits (auto if blank)" className="bg-white border-border h-11 tracking-[0.2em]" />
+                <Input inputMode="numeric" maxLength={4} value={newUser.login_pin} onChange={(e) => setNew('login_pin', e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="4 digits (auto — shown after create)" className="bg-white border-border h-11 tracking-[0.2em]" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Password</label>
