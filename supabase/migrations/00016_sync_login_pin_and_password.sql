@@ -27,6 +27,7 @@ AS $$
 DECLARE
   v_pin text := nullif(btrim(coalesce(p_login_pin, '')), '');
   v_password text := nullif(btrim(coalesce(new_password, '')), '');
+  v_existing_pin text;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin') THEN
     RAISE EXCEPTION 'Only admins can change passwords';
@@ -35,8 +36,16 @@ BEGIN
     RAISE EXCEPTION 'User not found';
   END IF;
 
-  -- A PIN is the primary credential: when one is supplied it becomes the auth
-  -- password so the sign-in page can authenticate with it.
+  SELECT login_pin INTO v_existing_pin FROM public.profiles WHERE id = target_user_id;
+
+  -- The sign-in page only accepts a PIN, so a PIN always wins: fall back to the
+  -- account's existing PIN when the admin did not supply a new one, and derive
+  -- the auth password from it. A custom password only applies to accounts that
+  -- have no PIN at all.
+  IF v_pin IS NULL THEN
+    v_pin := v_existing_pin;
+  END IF;
+
   IF v_pin IS NOT NULL THEN
     IF v_pin !~ '^[0-9]{4}$' THEN
       RAISE EXCEPTION 'Login PIN must be exactly 4 digits';
@@ -53,7 +62,7 @@ BEGIN
         updated_at = now()
   WHERE id = target_user_id;
 
-  IF v_pin IS NOT NULL THEN
+  IF nullif(btrim(coalesce(p_login_pin, '')), '') IS NOT NULL THEN
     UPDATE public.profiles SET login_pin = v_pin WHERE id = target_user_id;
   END IF;
 END;
