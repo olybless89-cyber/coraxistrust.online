@@ -489,6 +489,17 @@ export async function setUserLoginPin(userId: string, pin: string): Promise<void
   });
 }
 
+export async function setUserRole(userId: string, role: 'user' | 'admin'): Promise<void> {
+  const { error } = await supabase.rpc('admin_set_user_role', {
+    target_user_id: userId,
+    new_role: role,
+  });
+  if (error) {
+    if (error.code === 'PGRST202') throw new Error('Database migration 00017 has not been applied yet.');
+    throw error;
+  }
+}
+
 export async function setUserTransferPin(userId: string, pin: string): Promise<void> {
   const { error } = await supabase
     .from('profiles')

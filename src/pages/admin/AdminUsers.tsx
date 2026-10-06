@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import type { Profile, BankAccount } from '@/types';
-import { adminCreditAccountBackdated, adminCreateUser, adminDeleteUser, adminSetUserPassword, setUserLoginPin, setUserTransfersBlocked, setUserTransferPin, uploadAvatar } from '@/services/api';
+import { adminCreditAccountBackdated, adminCreateUser, adminDeleteUser, adminSetUserPassword, setUserLoginPin, setUserRole, setUserTransfersBlocked, setUserTransferPin, uploadAvatar } from '@/services/api';
 import { ACCOUNT_TYPES } from '@/config/brand';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -287,13 +287,18 @@ export default function AdminUsers() {
     setActionLoading(null);
   };
 
-  const toggleRole = async (userId: string, currentRole: string) => {
-    const newRole = currentRole === 'admin' ? 'user' : 'admin';
-    setActionLoading(userId);
-    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
-    if (error) { toast.error('Failed to update role'); }
-    else { toast.success(`Role updated to ${newRole}`); await loadUsers(); }
-    setActionLoading(null);
+  const toggleRole = async (u: UserWithAccounts) => {
+    const newRole = u.role === 'admin' ? 'user' : 'admin';
+    setActionLoading(u.id);
+    try {
+      await setUserRole(u.id, newRole);
+      toast.success(`Role updated to ${newRole}`);
+      await loadUsers();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update role');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const filtered = users.filter((u) => {
@@ -413,15 +418,17 @@ export default function AdminUsers() {
                               ? <><CheckCircle className="w-3 h-3 mr-1" />Unblock Transfers</>
                               : <><ArrowLeftRight className="w-3 h-3 mr-1" />Block Transfers</>}
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="border border-border text-xs h-8 px-2"
-                            onClick={() => toggleRole(u.id, u.role)}
-                            disabled={actionLoading === u.id}
-                          >
-                            {u.role === 'admin' ? <><Ban className="w-3 h-3 mr-1" />Demote</> : <><UserCog className="w-3 h-3 mr-1" />Promote</>}
-                          </Button>
+                          {adminUser?.id !== u.id && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="border border-border text-xs h-8 px-2"
+                              onClick={() => toggleRole(u)}
+                              disabled={actionLoading === u.id}
+                            >
+                              {u.role === 'admin' ? <><Ban className="w-3 h-3 mr-1" />Demote</> : <><UserCog className="w-3 h-3 mr-1" />Promote</>}
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="ghost"
