@@ -474,11 +474,14 @@ export async function setUserTransfersBlocked(userId: string, blocked: boolean):
 // ─── Login & transfer PINs ──────────────────────────────────────────────────
 
 export async function setUserLoginPin(userId: string, pin: string): Promise<void> {
-  const { error } = await supabase
-    .from('profiles')
-    .update({ login_pin: pin })
-    .eq('id', userId);
-  if (error) throw error;
+  const { error } = await supabase.rpc('admin_set_login_pin', {
+    target_user_id: userId,
+    new_pin: pin,
+  });
+  if (error) {
+    if (error.code === 'PGRST202') throw new Error('Database migration 00016 has not been applied yet.');
+    throw error;
+  }
   notify(userId, {
     title: 'Login PIN changed',
     body: 'Your login PIN was changed. If this was not you, contact support immediately.',

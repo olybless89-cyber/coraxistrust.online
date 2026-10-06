@@ -128,15 +128,16 @@ export default function AdminUsers() {
   const submitPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pwUser) return;
-    if (pwInput.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+    if (pwInput && pwInput.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     if (pwPinInput && !/^\d{4}$/.test(pwPinInput)) { toast.error('Login PIN must be exactly 4 digits'); return; }
+    if (!pwInput && !pwPinInput) { toast.error('Enter a password, a login PIN, or both'); return; }
     setPwSaving(true);
     try {
       await adminSetUserPassword(pwUser.id, pwInput, pwPinInput || undefined);
       if (pwPinInput) setPwUser({ ...pwUser, login_pin: pwPinInput });
       setPwInput('');
       setPwPinInput('');
-      toast.success('Password updated');
+      toast.success(pwPinInput ? 'Login PIN and password updated' : 'Password updated');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to update password');
     } finally {
@@ -756,18 +757,19 @@ export default function AdminUsers() {
           </DialogHeader>
           <form onSubmit={submitPassword} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">New password</label>
-              <Input type="text" value={pwInput} onChange={(e) => setPwInput(e.target.value)} placeholder="At least 6 characters" className="bg-white border-border h-11" />
-              <p className="text-xs text-muted-foreground mt-2">This replaces the user's sign-in password directly.</p>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Login PIN</label>
+              <Input inputMode="numeric" maxLength={4} value={pwPinInput} onChange={(e) => setPwPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="4 digits" className="bg-white border-border h-11 tracking-[0.3em]" />
+              <p className="text-xs text-muted-foreground mt-2">The PIN the user signs in with. Setting it also updates their sign-in password.</p>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Login PIN (optional)</label>
-              <Input inputMode="numeric" maxLength={4} value={pwPinInput} onChange={(e) => setPwPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Also set 4-digit PIN" className="bg-white border-border h-11 tracking-[0.3em]" />
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Password (optional)</label>
+              <Input type="text" value={pwInput} onChange={(e) => setPwInput(e.target.value)} placeholder="At least 6 characters" className="bg-white border-border h-11" />
+              <p className="text-xs text-muted-foreground mt-2">Leave blank to set the PIN only.</p>
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setPwUser(null)} className="border border-border">Cancel</Button>
-              <Button type="submit" disabled={pwSaving || pwInput.length < 6} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                {pwSaving ? 'Saving...' : 'Update Password'}
+              <Button type="submit" disabled={pwSaving || (!pwInput && !pwPinInput)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                {pwSaving ? 'Saving...' : 'Update'}
               </Button>
             </DialogFooter>
           </form>
