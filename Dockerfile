@@ -26,6 +26,7 @@ RUN node_modules/.bin/vite build
 
 # Production stage - serve with nginx
 FROM nginx:alpine AS runner
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Copy built assets
 COPY --from=builder /app/dist /usr/share/nginx/html
@@ -42,3 +43,4 @@ RUN printf 'server {\n\
 
 # Use envsubst to fill in $PORT at runtime
 CMD ["/bin/sh", "-c", "envsubst '$PORT' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+RUN sed -i "s/worker_processes.*;/worker_processes 2;/" /etc/nginx/nginx.conf
