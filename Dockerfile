@@ -1,15 +1,14 @@
 FROM node:22.12.0-alpine AS builder
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
 WORKDIR /app
 
 # Public client config. Vite inlines VITE_* at build time, so these must be
 # present during `vite build`, not just at runtime. Railway injects service
 # variables as Docker build args when they are declared here.
+ARG VITE_SUPABASE_URL=https://gateway-production-9656.up.railway.app
+ARG VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzY3MjI1NjAwLCJleHAiOjIwODI3NTg0MDB9.fwl84Mtj-dv7tFuRwPG6d0xe7hH6BGZPseg0NwncXn8
 ARG VITE_SENTRY_DSN
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
     VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY \
     VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 
