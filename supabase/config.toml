@@ -3,3 +3,6 @@ enable_confirmations = false
 
 [auth.phone]
 enable_confirmations = false
+
+[functions.mail-inbound]
+verify_jwt = false

@@ -46,6 +46,7 @@ import AdminKYC from '@/pages/admin/AdminKYC';
 import AdminTransactions from '@/pages/admin/AdminTransactions';
 import AdminCardRequests from '@/pages/admin/AdminCardRequests';
 import AdminMessages from '@/pages/admin/AdminMessages';
+import AdminEmail from '@/pages/admin/AdminEmail';
 
 // 404
 import NotFound from '@/pages/NotFound';
@@ -98,6 +99,7 @@ const App: React.FC = () => {
               <Route path="transactions" element={<AdminTransactions />} />
               <Route path="card-requests" element={<AdminCardRequests />} />
               <Route path="messages" element={<AdminMessages />} />
+              <Route path="email" element={<AdminEmail />} />
             </Route>
 
             <Route path="/404" element={<NotFound />} />

@@ -48,3 +48,9 @@
   `python3 selfhost/gen-supabase-keys.py`; they must be signed with the same secret.
 - `VITE_SUPABASE_URL` is the public gateway (Kong) domain; the anon key goes in
   `VITE_SUPABASE_ANON_KEY`. Both are build-time inlined by Vite.
+
+## Admin Email (/admin/email)
+- Real external email for @westfieldtrustbnk.com via Resend. Table `mail_messages` (00018), bucket `mail_attachments`.
+- Outbound: `mail-send` Edge Function (admin JWT required). Senders: `MAIL_SENDERS` (default support,info,admin).
+- Inbound: Resend receiving webhook → `mail-inbound` (deploy with `--no-verify-jwt`), verified with `RESEND_WEBHOOK_SECRET`.
+  Also handles email.delivered/bounced/etc. to update sent-mail status.

@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, Users, ShieldCheck, ArrowUpRight,
-  LogOut, Menu, X, Building2, ChevronRight, CreditCard, Mail,
+  LogOut, Menu, X, Building2, ChevronRight, CreditCard, Mail, Inbox,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -18,6 +18,7 @@ const navItems = [
   { path: '/admin/kyc', label: 'KYC Queue', icon: ShieldCheck, end: false },
   { path: '/admin/transactions', label: 'Transactions', icon: ArrowUpRight, end: false },
   { path: '/admin/card-requests', label: 'Card Requests', icon: CreditCard, end: false },
+  { path: '/admin/email', label: 'Email', icon: Inbox, end: false },
   { path: '/admin/messages', label: 'Secure Mail', icon: Mail, end: false },
 ];
 
