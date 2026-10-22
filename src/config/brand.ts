@@ -3,26 +3,26 @@
 // hard-coded, so the identity can be changed in one place.
 
 export const BRAND = {
-  name: 'Coraxis Trust',
-  shortName: 'Coraxis',
-  domain: 'coraxistrust.online',
-  url: 'https://coraxistrust.online',
+  name: 'West Field Trust',
+  shortName: 'West Field',
+  domain: 'westfieldtrustbnk.com',
+  url: 'https://westfieldtrustbnk.com',
   tagline: 'Premium Digital Banking',
   description:
-    'Coraxis Trust — premium digital banking. Accounts, transfers, deposits, withdrawals, debit cards and investments.',
+    'West Field Trust — premium digital banking. Accounts, transfers, deposits, withdrawals, debit cards and investments.',
   email: {
-    support: 'support@coraxistrust.online',
-    security: 'security@coraxistrust.online',
-    noreply: 'noreply@coraxistrust.online',
+    support: 'support@westfieldtrustbnk.com',
+    security: 'security@westfieldtrustbnk.com',
+    noreply: 'noreply@westfieldtrustbnk.com',
   },
   address: 'Bahnhofstrasse 1, 8001 Zürich, Switzerland',
   accountPrefix: 'CXT',
   social: {
-    twitter: 'https://twitter.com/coraxistrust',
-    facebook: 'https://facebook.com/coraxistrust',
-    instagram: 'https://instagram.com/coraxistrust',
-    youtube: 'https://youtube.com/@coraxistrust',
-    linkedin: 'https://linkedin.com/company/coraxistrust',
+    twitter: 'https://twitter.com/westfieldtrust',
+    facebook: 'https://facebook.com/westfieldtrust',
+    instagram: 'https://instagram.com/westfieldtrust',
+    youtube: 'https://youtube.com/@westfieldtrust',
+    linkedin: 'https://linkedin.com/company/westfieldtrust',
   },
 } as const;
 

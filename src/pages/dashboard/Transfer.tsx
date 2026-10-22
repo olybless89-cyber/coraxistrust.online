@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 type Stage = 'form' | 'confirm' | 'pin' | 'tpin';
 
 const METHODS: { value: TransferMethod; label: string; eta: string; fee: number }[] = [
-  { value: 'internal', label: 'Internal Transfer (within Coraxis Trust)', eta: 'Instant', fee: 0 },
+  { value: 'internal', label: 'Internal Transfer (within West Field Trust)', eta: 'Instant', fee: 0 },
   { value: 'ach', label: 'ACH Transfer (US banks)', eta: '1–3 business days', fee: 0 },
   { value: 'wire', label: 'Domestic Wire Transfer', eta: 'Same business day', fee: 15 },
   { value: 'international', label: 'International Wire (SWIFT)', eta: '1–5 business days', fee: 25 },
@@ -212,7 +212,7 @@ export default function TransferPage() {
         senderUserId: user?.id,
         details: {
           beneficiaryName: beneficiaryName.trim(),
-          bankName: needsBankDetails ? bankName.trim() : 'Coraxis Trust',
+          bankName: needsBankDetails ? bankName.trim() : 'West Field Trust',
           routingNumber: routingNumber.trim(),
           swiftCode: method === 'international' ? swiftCode.trim() : undefined,
           method,

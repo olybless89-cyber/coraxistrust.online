@@ -1,4 +1,4 @@
-# Coraxis Trust
+# West Field Trust
 
 A premium digital banking platform built with React + Vite + TypeScript + Tailwind CSS + Supabase.
 
@@ -75,4 +75,4 @@ Deploys on Railway via the `Dockerfile` (node:22 build → nginx SPA). Point a
 Railway service at this repository and set `VITE_SUPABASE_URL` and
 `VITE_SUPABASE_ANON_KEY` for the service. `railway.json` and `nixpacks.toml`
 describe the build; use a fresh Railway project and its own domain
-(`coraxistrust.online`).
+(`westfieldtrustbnk.com`).

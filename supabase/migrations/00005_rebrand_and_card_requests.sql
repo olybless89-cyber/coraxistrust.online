@@ -1,4 +1,4 @@
--- Coraxis Trust rebrand + debit card requests
+-- West Field Trust rebrand + debit card requests
 -- 1. New account-number prefix for new accounts (CXT). Existing legacy accounts keep their number.
 CREATE OR REPLACE FUNCTION generate_account_number()
 RETURNS text AS $$

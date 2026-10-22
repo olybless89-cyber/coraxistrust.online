@@ -1,4 +1,4 @@
-# Project Notes — Coraxis Trust (banking app)
+# Project Notes — West Field Trust (banking app)
 
 ## Stack
 - React 18 + Vite (rolldown-vite) + TypeScript + Tailwind + shadcn/ui

@@ -51,4 +51,4 @@ REVOKE ALL ON FUNCTION public.admin_set_user_role(uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.admin_set_user_role(uuid, text) TO authenticated;
 
 -- Safety net: the admin account must always be able to reach the portal.
-UPDATE public.profiles SET role = 'admin' WHERE email = 'admin@coraxistrust.online';
+UPDATE public.profiles SET role = 'admin' WHERE email = 'admin@westfieldtrustbnk.com';

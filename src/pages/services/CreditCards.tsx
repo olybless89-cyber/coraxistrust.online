@@ -6,9 +6,9 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 const CARDS = [
-  { name: 'Coraxis Classic', tier: 'Standard', color: 'from-gray-600 to-gray-900', features: ['1% cashback all purchases', 'Zero annual fee', 'Contactless payments', '24/7 fraud monitoring'] },
-  { name: 'Coraxis Prestige', tier: 'Premium', color: 'from-primary to-[#0c2a26]', features: ['4% dining cashback', '3% travel cashback', '2% grocery cashback', 'Airport lounge access', 'Concierge service'], featured: true },
-  { name: 'Coraxis Infinite', tier: 'Luxury', color: 'from-[#0b1614] to-[#000]', features: ['Unlimited cash back', 'No foreign transaction fees', 'Global Priority Pass', 'Personal financial advisor', 'Metal card'] },
+  { name: 'West Field Classic', tier: 'Standard', color: 'from-gray-600 to-gray-900', features: ['1% cashback all purchases', 'Zero annual fee', 'Contactless payments', '24/7 fraud monitoring'] },
+  { name: 'West Field Prestige', tier: 'Premium', color: 'from-primary to-[#0c2a26]', features: ['4% dining cashback', '3% travel cashback', '2% grocery cashback', 'Airport lounge access', 'Concierge service'], featured: true },
+  { name: 'West Field Infinite', tier: 'Luxury', color: 'from-[#0b1614] to-[#000]', features: ['Unlimited cash back', 'No foreign transaction fees', 'Global Priority Pass', 'Personal financial advisor', 'Metal card'] },
 ];
 
 const MATERIALS = ['Standard PVC', 'Metal Titanium', 'Carbon Fiber', 'Recycled Ocean Plastic'];
@@ -98,7 +98,7 @@ export default function CreditCardsPage() {
               <div className="mt-6">
                 <div className="bg-gradient-to-br from-primary to-[#0c2a26] rounded-2xl p-6 teal-glow">
                   <div className="flex justify-between mb-6">
-                    <span className="text-white/60 text-xs">Coraxis Prestige</span>
+                    <span className="text-white/60 text-xs">West Field Prestige</span>
                     <span className="text-white/60 text-xs">{material}</span>
                   </div>
                   <div className="text-white font-mono text-sm mb-4">•••• •••• •••• 4521</div>

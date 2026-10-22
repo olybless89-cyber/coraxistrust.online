@@ -1,4 +1,4 @@
-# Self-hosting Supabase on Railway for Coraxis Trust
+# Self-hosting Supabase on Railway for West Field Trust
 
 This app talks to Supabase for **auth, Postgres, Row Level Security, storage and
 edge functions**. A bare Railway Postgres is not enough — the code never opens a
@@ -64,7 +64,7 @@ Also set the public URL once the gateway domain exists (§4):
 ```
 SUPABASE_PUBLIC_URL=https://<kong-domain>
 API_EXTERNAL_URL=https://<kong-domain>
-SITE_URL=https://coraxistrust.online
+SITE_URL=https://westfieldtrustbnk.com
 ```
 
 `API_EXTERNAL_URL` is what GoTrue uses to build links; `SITE_URL` is the app's
@@ -119,9 +119,9 @@ so the app works without it. To add it, deploy Supabase Edge Functions
 RESEND_API_KEY=
 SUPABASE_URL=https://<kong-domain>
 SUPABASE_SERVICE_ROLE_KEY=<from keys.env>
-SMTP_FROM_NAME=Coraxis Trust
-SMTP_FROM_EMAIL=noreply@coraxistrust.online
-SMTP_REPLY_TO=support@coraxistrust.online
+SMTP_FROM_NAME=West Field Trust
+SMTP_FROM_EMAIL=noreply@westfieldtrustbnk.com
+SMTP_REPLY_TO=support@westfieldtrustbnk.com
 ```
 
 ## 9. Verify
@@ -139,25 +139,25 @@ SMTP_REPLY_TO=support@coraxistrust.online
   finishes initialising — Railway's restart policy handles it.
 - **Volumes**: keep Postgres and Storage on persistent volumes; without them a
   redeploy wipes data.
-- **CORS**: requests come from `https://coraxistrust.online`; Kong's CORS plugin
+- **CORS**: requests come from `https://westfieldtrustbnk.com`; Kong's CORS plugin
   must allow that origin.
 - **Image transform**: disabled on the Railway template (needs a shared volume
   Railway does not support). Not used by this app.
 - **Backups**: self-hosting means you own them. Schedule `pg_dump`.
 
-## 10. Deployed instance (coraxistrust.online)
+## 10. Deployed instance (westfieldtrustbnk.com)
 
 Provisioned with the Railway CLI using the `supabase-self-hosted-full-stack`
-template in its own project (`coraxistrust-supabase`), separate from any source
+template in its own project (`westfieldtrust-supabase`), separate from any source
 infrastructure.
 
 | Piece | Value |
 |---|---|
-| Railway project | `coraxistrust-supabase` (production env) |
+| Railway project | `westfieldtrust-supabase` (production env) |
 | Gateway (Kong) | `https://kong-production-f62f.up.railway.app` |
-| Web app service | `web` — repo `olybless89-cyber/coraxistrust.online` |
+| Web app service | `web` — repo `olybless89-cyber/westfieldtrustbnk.com` |
 | Web URL | `https://web-production-e23f.up.railway.app` |
-| Custom domain | `https://coraxistrust.online` (attached to `web`) |
+| Custom domain | `https://westfieldtrustbnk.com` (attached to `web`) |
 | Web build vars | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` |
 
 Secrets (`JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`) were generated locally
@@ -173,12 +173,12 @@ migration run was deleted afterwards, so Postgres is reachable only over
 Railway's private network.
 
 A bootstrap admin is created by `00004_create_admin_user_v2.sql`:
-`admin@coraxistrust.online` with login PIN `1234` (password `cxt_1234`).
+`admin@westfieldtrustbnk.com` with login PIN `1234` (password `cxt_1234`).
 Change the PIN after first sign-in.
 
 ### DNS to finish
 
-Attach these records at the `coraxistrust.online` registrar so the custom domain
+Attach these records at the `westfieldtrustbnk.com` registrar so the custom domain
 verifies and gets a certificate:
 
 ```
@@ -187,4 +187,4 @@ TXT     _railway-verify   railway-verify=23f58833b42fc5dbab6f002e50ab607de4b4ae0
 ```
 
 Until then the app is served from the Railway URL above. Verify with
-`railway domain status coraxistrust.online --service web`.
+`railway domain status westfieldtrustbnk.com --service web`.
