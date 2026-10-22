@@ -1,4 +1,4 @@
-# Project Notes — West Field Trust (banking app)
+# Project Notes — Westfield Trust (banking app)
 
 ## Stack
 - React 18 + Vite (rolldown-vite) + TypeScript + Tailwind + shadcn/ui

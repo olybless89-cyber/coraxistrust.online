@@ -1,4 +1,4 @@
-# West Field Trust
+# Westfield Trust
 
 A premium digital banking platform built with React + Vite + TypeScript + Tailwind CSS + Supabase.
 

@@ -3,13 +3,13 @@
 // hard-coded, so the identity can be changed in one place.
 
 export const BRAND = {
-  name: 'West Field Trust',
-  shortName: 'West Field',
+  name: 'Westfield Trust',
+  shortName: 'Westfield',
   domain: 'westfieldtrustbnk.com',
   url: 'https://westfieldtrustbnk.com',
   tagline: 'Premium Digital Banking',
   description:
-    'West Field Trust — premium digital banking. Accounts, transfers, deposits, withdrawals, debit cards and investments.',
+    'Westfield Trust — premium digital banking. Accounts, transfers, deposits, withdrawals, debit cards and investments.',
   email: {
     support: 'support@westfieldtrustbnk.com',
     security: 'security@westfieldtrustbnk.com',

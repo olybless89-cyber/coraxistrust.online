@@ -1,4 +1,4 @@
-# Self-hosting Supabase on Railway for West Field Trust
+# Self-hosting Supabase on Railway for Westfield Trust
 
 This app talks to Supabase for **auth, Postgres, Row Level Security, storage and
 edge functions**. A bare Railway Postgres is not enough — the code never opens a
@@ -119,7 +119,7 @@ so the app works without it. To add it, deploy Supabase Edge Functions
 RESEND_API_KEY=
 SUPABASE_URL=https://<kong-domain>
 SUPABASE_SERVICE_ROLE_KEY=<from keys.env>
-SMTP_FROM_NAME=West Field Trust
+SMTP_FROM_NAME=Westfield Trust
 SMTP_FROM_EMAIL=noreply@westfieldtrustbnk.com
 SMTP_REPLY_TO=support@westfieldtrustbnk.com
 ```

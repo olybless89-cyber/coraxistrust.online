@@ -2,7 +2,7 @@
 
 ## 1. Application Overview
 
-**Application Name**: West Field Trust
+**Application Name**: Westfield Trust
 
 **Description**: A full-stack digital banking web application built with React + Vite (TypeScript) frontend and Supabase backend. The platform provides comprehensive banking services including account management, fund transfers, investment plans, credit cards, and loan products.
 
@@ -35,7 +35,7 @@
 ### 3.1 Page Hierarchy
 
 ```
-West Field Trust
+Westfield Trust
 ├── Public Pages (Marketing Site)
 │   ├── Home (/)
 │   ├── Digital Banking (/digital-banking)
