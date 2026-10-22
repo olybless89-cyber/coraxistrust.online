@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: westfieldtrust
+    runtime: static
+    buildCommand: >-
+      npx pnpm@9 install --no-frozen-lockfile
+      && npx pnpm@9 run build:railway
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
