@@ -17,7 +17,7 @@ BEGIN
       gen_random_uuid(),
       '00000000-0000-0000-0000-000000000000',
       'admin@westfieldtrustbnk.com',
-      crypt('cxt_1234', gen_salt('bf')),
+      extensions.crypt('cxt_1234', extensions.gen_salt('bf')),
       now(),
       jsonb_build_object(
         'first_name', 'Admin',

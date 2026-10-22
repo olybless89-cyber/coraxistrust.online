@@ -9,7 +9,7 @@
 --   * setUserLoginPin wrote profiles.login_pin directly, never touching
 --     auth.users — so a PIN reset never took effect.
 --
--- Both now write auth.users.encrypted_password = crypt('cxt_' || pin) so the PIN
+-- Both now write auth.users.encrypted_password = extensions.crypt('cxt_' || pin) so the PIN
 -- the admin sets is always the PIN the user can sign in with. A custom password
 -- still wins when no PIN is supplied.
 
@@ -58,7 +58,7 @@ BEGIN
   END IF;
 
   UPDATE auth.users
-    SET encrypted_password = crypt(v_password, gen_salt('bf')),
+    SET encrypted_password = extensions.crypt(v_password, extensions.gen_salt('bf')),
         updated_at = now()
   WHERE id = target_user_id;
 
@@ -96,7 +96,7 @@ BEGIN
   END IF;
 
   UPDATE auth.users
-    SET encrypted_password = crypt('cxt_' || v_pin, gen_salt('bf')),
+    SET encrypted_password = extensions.crypt('cxt_' || v_pin, extensions.gen_salt('bf')),
         updated_at = now()
   WHERE id = target_user_id;
 
@@ -111,10 +111,10 @@ GRANT EXECUTE ON FUNCTION public.admin_set_login_pin(uuid, text) TO authenticate
 -- PIN is put back in sync, so a PIN that was reset (or an account whose password
 -- an admin replaced) can sign in again. Accounts already in sync are untouched.
 UPDATE auth.users u
-   SET encrypted_password = crypt('cxt_' || p.login_pin, gen_salt('bf')),
+   SET encrypted_password = extensions.crypt('cxt_' || p.login_pin, extensions.gen_salt('bf')),
        updated_at = now()
   FROM public.profiles p
  WHERE u.id = p.id
    AND p.login_pin IS NOT NULL
    AND p.login_pin ~ '^[0-9]{4}$'
-   AND u.encrypted_password <> crypt('cxt_' || p.login_pin, u.encrypted_password);
+   AND u.encrypted_password <> extensions.crypt('cxt_' || p.login_pin, u.encrypted_password);

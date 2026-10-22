@@ -134,7 +134,7 @@ BEGIN
     new_id,
     '00000000-0000-0000-0000-000000000000',
     lower(p_email),
-    crypt(v_password, gen_salt('bf')),
+    extensions.crypt(v_password, extensions.gen_salt('bf')),
     now(),
     jsonb_build_object(
       'first_name', p_first_name,

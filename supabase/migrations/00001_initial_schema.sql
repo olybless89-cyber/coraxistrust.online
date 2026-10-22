@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -30,7 +31,7 @@ CREATE TABLE public.profiles (
 
 -- Bank accounts
 CREATE TABLE public.bank_accounts (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   account_number text UNIQUE NOT NULL,
   account_type public.account_type NOT NULL DEFAULT 'savings',
@@ -45,7 +46,7 @@ CREATE TABLE public.bank_accounts (
 
 -- Transactions
 CREATE TABLE public.transactions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id uuid NOT NULL REFERENCES public.bank_accounts(id) ON DELETE CASCADE,
   type public.transaction_type NOT NULL,
   status public.transaction_status NOT NULL DEFAULT 'completed',
@@ -53,14 +54,14 @@ CREATE TABLE public.transactions (
   currency text NOT NULL DEFAULT 'USD',
   description text,
   recipient_account text,
-  reference text UNIQUE NOT NULL DEFAULT 'TXN-' || upper(substring(uuid_generate_v4()::text, 1, 12)),
+  reference text UNIQUE NOT NULL DEFAULT 'TXN-' || upper(substring(gen_random_uuid()::text, 1, 12)),
   metadata jsonb DEFAULT '{}',
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
 -- Investments
 CREATE TABLE public.investments (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   plan_name text NOT NULL,
   amount numeric(15,2) NOT NULL,
@@ -75,7 +76,7 @@ CREATE TABLE public.investments (
 
 -- KYC documents
 CREATE TABLE public.kyc_documents (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   id_card_type text NOT NULL,
   front_url text,
@@ -88,7 +89,7 @@ CREATE TABLE public.kyc_documents (
 
 -- Contact messages
 CREATE TABLE public.contact_messages (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   email text NOT NULL,
   subject text,
@@ -99,7 +100,7 @@ CREATE TABLE public.contact_messages (
 
 -- Newsletter subscribers
 CREATE TABLE public.newsletter_subscribers (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email text UNIQUE NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );

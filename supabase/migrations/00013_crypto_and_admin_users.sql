@@ -20,7 +20,7 @@ ALTER TYPE public.account_type ADD VALUE IF NOT EXISTS 'crypto';
 
 -- ── Crypto price catalogue ──────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.crypto_assets (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   symbol text UNIQUE NOT NULL,
   name text NOT NULL,
   price_usd numeric(18,8) NOT NULL DEFAULT 0,
@@ -36,7 +36,7 @@ CREATE TRIGGER crypto_assets_updated_at BEFORE UPDATE ON public.crypto_assets
 
 -- ── Crypto holdings ledger ──────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.crypto_holdings (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   account_id uuid NOT NULL REFERENCES public.bank_accounts(id) ON DELETE CASCADE,
   symbol text NOT NULL,
@@ -148,7 +148,7 @@ BEGIN
     new_id,
     '00000000-0000-0000-0000-000000000000',
     lower(p_email),
-    crypt(v_password, gen_salt('bf')),
+    extensions.crypt(v_password, extensions.gen_salt('bf')),
     now(),
     jsonb_build_object(
       'first_name', p_first_name,
@@ -216,7 +216,7 @@ BEGIN
   END IF;
 
   UPDATE auth.users
-    SET encrypted_password = crypt(new_password, gen_salt('bf')),
+    SET encrypted_password = extensions.crypt(new_password, extensions.gen_salt('bf')),
         updated_at = now()
   WHERE id = target_user_id;
 
